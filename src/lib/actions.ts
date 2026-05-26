@@ -17,11 +17,13 @@ export interface GenerateDrawingState {
 
 const textToDrawingSchema = z.object({
   prompt: z.string().min(3, { message: 'Prompt must be at least 3 characters long.' }),
+  stylePreset: z.string().optional(),
 });
 
 export async function generateDrawingAction(prevState: GenerateDrawingState, formData: FormData): Promise<GenerateDrawingState> {
   const validatedFields = textToDrawingSchema.safeParse({
     prompt: formData.get('prompt'),
+    stylePreset: formData.get('stylePreset') || 'none',
   });
 
   if (!validatedFields.success) {
@@ -35,6 +37,7 @@ export async function generateDrawingAction(prevState: GenerateDrawingState, for
   try {
     const input: GenerateDrawingFromTextPromptInput = {
       prompt: validatedFields.data.prompt,
+      stylePreset: validatedFields.data.stylePreset || 'none',
     };
     const result = await generateDrawingFromTextPrompt(input);
     return {
@@ -58,7 +61,6 @@ export interface ImproveDrawingState {
     improvedDrawingDataUri?: string | null;
     error?: {
         photoDataUri?: string[];
-        description?: string[];
         _errors?: string[];
     } | null;
 }
@@ -66,13 +68,13 @@ export interface ImproveDrawingState {
 
 const improveDrawingSchema = z.object({
   photoDataUri: z.string().min(1, { message: 'Drawing data is required.' }),
-  description: z.string().min(3, { message: 'Description must be at least 3 characters long.' }),
+  stylePreset: z.string().optional(),
 });
 
 export async function improveDrawingAction(prevState: ImproveDrawingState, formData: FormData): Promise<ImproveDrawingState> {
     const validatedFields = improveDrawingSchema.safeParse({
       photoDataUri: formData.get('photoDataUri'),
-      description: formData.get('description'),
+      stylePreset: formData.get('stylePreset') || 'none',
     });
 
     if (!validatedFields.success) {
@@ -86,7 +88,7 @@ export async function improveDrawingAction(prevState: ImproveDrawingState, formD
     try {
         const input: ImproveUserDrawingWithAIInput = {
             photoDataUri: validatedFields.data.photoDataUri,
-            description: validatedFields.data.description,
+            stylePreset: validatedFields.data.stylePreset || 'none',
         };
         const result = await improveUserDrawingWithAI(input);
         return {
@@ -99,7 +101,7 @@ export async function improveDrawingAction(prevState: ImproveDrawingState, formD
         return {
             message: 'Failed to improve drawing.',
             improvedDrawingDataUri: null,
-            error: { _errors: ['An unexpected error occurred. Please try again.'] }
+            error: { _errors: [error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.'] }
         };
     }
 }
