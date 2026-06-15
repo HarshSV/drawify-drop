@@ -81,28 +81,52 @@ Return a subject (one short noun phrase) and a refinedPrompt (detailed image gen
 
     console.log('OpenRouter Analysis Output:', analysis);
 
-    // 2. Generate the polished drawing via Pollinations AI
-    const seed = Math.floor(Math.random() * 1000000);
-    const negativePrompt = 'face, portrait, person, human, realistic photo, photorealistic, nsfw';
-    const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(analysis.refinedPrompt)}?width=1024&height=1024&nologo=true&seed=${seed}&negative=${encodeURIComponent(negativePrompt)}&model=flux`;
-
-    // 3. Fetch image and convert to Base64
-    const imageResponse = await fetch(imageUrl);
-    if (!imageResponse.ok) {
-      throw new Error(`Failed to fetch improved drawing from generator: ${imageResponse.statusText}`);
+    // 2. Use OpenRouter with google/gemini-2.5-flash-image for image generation
+    const apiKey = process.env.OPENROUTER_API_KEY;
+    if (!apiKey) {
+      throw new Error('OPENROUTER_API_KEY is not configured in your .env file.');
     }
+    
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        'HTTP-Referer': 'https://drawify.college',
+        'X-Title': 'Drawify College Project',
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash-image",
+        messages: [
+          {
+            role: "user",
+            content: `Generate an improved drawing matching this description: ${analysis.refinedPrompt}`
+          }
+        ],
+        modalities: ["image"]
+      })
+    });
+    
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error(`OpenRouter improved drawing generation failed (${response.status}): ${errText}`);
+    }
+    
+    const data = await response.json();
+    const generatedImage = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+    if (!generatedImage) {
+      throw new Error(`OpenRouter did not return a generated image. Response: ${JSON.stringify(data)}`);
+    }
+    
+    const improvedDrawingDataUri = generatedImage;
 
-    const arrayBuffer = await imageResponse.arrayBuffer();
-    const base64Image = Buffer.from(arrayBuffer).toString('base64');
-    const improvedDrawingDataUri = `data:image/jpeg;base64,${base64Image}`;
-
-    // 4. Format display prompt for database history vault
+    // 3. Format display prompt for database history vault
     const styleLabel = input.stylePreset && input.stylePreset !== 'none' 
       ? input.stylePreset.charAt(0).toUpperCase() + input.stylePreset.slice(1) 
       : 'Default';
     const displayPrompt = `Improved sketch of a ${analysis.subject || 'drawing'} (${styleLabel})`;
 
-    // 5. Save to Supabase database
+    // 4. Save to Supabase database
     const { error } = await supabase
       .from('drawings')
       .insert([
