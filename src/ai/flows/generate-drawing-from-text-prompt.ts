@@ -37,44 +37,11 @@ export async function generateDrawingFromTextPrompt(input: GenerateDrawingFromTe
     const stylePrompt = ART_PRESET_PROMPTS[input.stylePreset || 'none'] || ART_PRESET_PROMPTS.none;
     const refinedPrompt = `${input.prompt}, ${stylePrompt}`;
     
-    // 2. Use OpenRouter with google/gemini-2.5-flash-image for image generation
-    const apiKey = process.env.OPENROUTER_API_KEY;
-    if (!apiKey) {
-      throw new Error('OPENROUTER_API_KEY is not configured in your .env file.');
-    }
-    
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-        'HTTP-Referer': 'https://drawify.college',
-        'X-Title': 'Drawify College Project',
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash-image",
-        messages: [
-          {
-            role: "user",
-            content: `Generate a drawing matching this description: ${refinedPrompt}`
-          }
-        ],
-        modalities: ["image"]
-      })
-    });
-    
-    if (!response.ok) {
-      const errText = await response.text();
-      throw new Error(`OpenRouter image generation failed (${response.status}): ${errText}`);
-    }
-    
-    const data = await response.json();
-    const generatedImage = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-    if (!generatedImage) {
-      throw new Error(`OpenRouter did not return a generated image. Response: ${JSON.stringify(data)}`);
-    }
-    
-    const drawingDataUri = generatedImage;
+    // 2. Construct the Pollinations AI URL for high-fidelity keyless image generation
+    // Because edge server IPs are rate-limited, returning this URL directly allows the client's browser
+    // to load the image directly from the user's home IP (which is not rate-limited).
+    const seed = Math.floor(Math.random() * 1000000);
+    const drawingDataUri = `https://image.pollinations.ai/prompt/${encodeURIComponent(refinedPrompt)}?width=1024&height=1024&nologo=true&seed=${seed}`;
 
     // 3. Save record to Supabase backend
     const { error } = await supabase
