@@ -22,7 +22,7 @@ export async function callOpenRouter(
   responseFormatJson: boolean = false
 ): Promise<string> {
   // Read model at call-time so .env reloads are always picked up
-  const resolvedModel = model || process.env.OPENROUTER_MODEL || 'google/gemini-2.0-flash-lite:free';
+  const resolvedModel = model || process.env.OPENROUTER_MODEL || 'google/gemma-4-31b-it:free';
   const apiKey = process.env.OPENROUTER_API_KEY;
 
   if (!apiKey || apiKey === 'your_openrouter_api_key_here') {
