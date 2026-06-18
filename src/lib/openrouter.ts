@@ -27,11 +27,23 @@ export async function callOpenRouter(
     throw new Error('OPENROUTER_API_KEY is not configured in your .env file.');
   }
 
-  const modelToTry = model || process.env.OPENROUTER_MODEL || 'google/gemma-4-31b-it:free';
-  const modelsToTry = [modelToTry];
-  
-  if (modelToTry === 'google/gemma-4-31b-it:free') {
-    modelsToTry.push('google/gemma-4-26b-a4b-it:free');
+  const modelsToTry: string[] = [];
+  const preferredModel = model || process.env.OPENROUTER_MODEL;
+  if (preferredModel) {
+    modelsToTry.push(preferredModel);
+  }
+
+  // List of active free vision models supporting structured JSON outputs
+  const freeVisionJSONModels = [
+    'google/gemma-4-31b-it:free',
+    'google/gemma-4-26b-a4b-it:free',
+    'nex-agi/nex-n2-pro:free',
+  ];
+
+  for (const m of freeVisionJSONModels) {
+    if (!modelsToTry.includes(m)) {
+      modelsToTry.push(m);
+    }
   }
 
   let lastError: Error | null = null;
