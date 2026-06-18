@@ -21,46 +21,62 @@ export async function callOpenRouter(
   model?: string,
   responseFormatJson: boolean = false
 ): Promise<string> {
-  // Read model at call-time so .env reloads are always picked up
-  const resolvedModel = model || process.env.OPENROUTER_MODEL || 'google/gemma-4-31b-it:free';
   const apiKey = process.env.OPENROUTER_API_KEY;
 
   if (!apiKey || apiKey === 'your_openrouter_api_key_here') {
     throw new Error('OPENROUTER_API_KEY is not configured in your .env file.');
   }
 
-  const payload: any = {
-    model: resolvedModel,
-    messages,
-  };
-
-  if (responseFormatJson) {
-    payload.response_format = { type: 'json_object' };
-  }
-
-  const response = await fetch(OPENROUTER_API_URL, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-      'HTTP-Referer': 'https://drawify.college', // Required by OpenRouter for ranking
-      'X-Title': 'Drawify College Project',       // Required by OpenRouter
-    },
-    body: JSON.stringify(payload),
-  });
-
-  if (!response.ok) {
-    const errText = await response.text();
-    throw new Error(`OpenRouter API call failed (${response.status}): ${errText}`);
-  }
-
-  const data = await response.json();
+  const modelToTry = model || process.env.OPENROUTER_MODEL || 'google/gemma-4-31b-it:free';
+  const modelsToTry = [modelToTry];
   
-  if (!data.choices || data.choices.length === 0) {
-    throw new Error('OpenRouter returned an empty response.');
+  if (modelToTry === 'google/gemma-4-31b-it:free') {
+    modelsToTry.push('google/gemma-4-26b-a4b-it:free');
   }
 
-  return data.choices[0].message.content || '';
+  let lastError: Error | null = null;
+
+  for (const currentModel of modelsToTry) {
+    try {
+      const payload: any = {
+        model: currentModel,
+        messages,
+      };
+
+      if (responseFormatJson) {
+        payload.response_format = { type: 'json_object' };
+      }
+
+      const response = await fetch(OPENROUTER_API_URL, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': 'https://drawify.college', // Required by OpenRouter for ranking
+          'X-Title': 'Drawify College Project',       // Required by OpenRouter
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`OpenRouter API call failed (${response.status}): ${errText}`);
+      }
+
+      const data = await response.json();
+      
+      if (!data.choices || data.choices.length === 0) {
+        throw new Error('OpenRouter returned an empty response.');
+      }
+
+      return data.choices[0].message.content || '';
+    } catch (error) {
+      console.warn(`OpenRouter: model ${currentModel} failed, trying next fallback. Error:`, error);
+      lastError = error as Error;
+    }
+  }
+
+  throw lastError || new Error('All OpenRouter models failed to respond.');
 }
 
 /**
