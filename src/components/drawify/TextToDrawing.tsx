@@ -62,13 +62,10 @@ function GenerationResult({ drawingDataUri }: { drawingDataUri: string | null | 
             <div className="absolute inset-0 bg-[linear-gradient(to_right,#cbd5e1_1px,transparent_1px),linear-gradient(to_bottom,#cbd5e1_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:1rem_1rem] opacity-20 dark:opacity-10 rounded-xl pointer-events-none" />
             
             {drawingDataUri ? (
-              <Image
+              <img
                 src={drawingDataUri}
                 alt="Generated drawing"
-                fill
-                sizes="(max-width: 768px) 100vw, 500px"
-                className="object-contain rounded-lg p-3 relative z-10 animate-fade-in"
-                priority
+                className="w-full h-full object-contain rounded-lg p-3 relative z-10 animate-fade-in"
               />
             ) : (
               pending ? (

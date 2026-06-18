@@ -151,6 +151,7 @@ export default function HistoryList() {
                 fill
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                 className="object-contain p-2 relative z-10 group-hover:scale-105 transition-transform duration-300"
+                unoptimized
               />
               {drawing.type === 'improve-drawing' && drawing.original_image_url && (
                 <div className="absolute bottom-2 left-2 bg-white/90 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 text-[9px] text-slate-500 dark:text-slate-400 font-semibold px-2 py-0.5 rounded z-20 shadow-xs">
@@ -254,6 +255,7 @@ export default function HistoryList() {
                         alt="Original sketch"
                         fill
                         className="object-contain p-2 relative z-10"
+                        unoptimized
                       />
                     </div>
                   </div>
@@ -268,6 +270,7 @@ export default function HistoryList() {
                         alt="Improved drawing"
                         fill
                         className="object-contain p-2 relative z-10"
+                        unoptimized
                       />
                     </div>
                   </div>
@@ -281,6 +284,7 @@ export default function HistoryList() {
                       alt="Generated drawing"
                       fill
                       className="object-contain p-2 relative z-10"
+                      unoptimized
                     />
                   </div>
                 </div>

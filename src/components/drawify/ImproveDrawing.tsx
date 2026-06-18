@@ -63,6 +63,7 @@ function ImproveResult({ improvedDrawingDataUri }: { improvedDrawingDataUri: str
                 sizes="(max-width: 768px) 100vw, 500px"
                 className="object-contain rounded-lg p-3 relative z-10 animate-fade-in"
                 priority
+                unoptimized
               />
             ) : (
                 pending ? (
